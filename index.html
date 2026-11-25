@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VQE Alchemist: Molecular Orbital Forge RPG</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="brand-icon">⚗️</span>
+      <div>
+        <h1>VQE Alchemist: Molecular Orbital Forge RPG</h1>
+        <p class="subtitle">Forja Alquímica Cuántica & Bucle Variacional VQE con Precisión Química (&lt; 1.6 mHa)</p>
+      </div>
+    </div>
+
+    <!-- RPG Rank & Level Badges -->
+    <div class="rpg-badge-group">
+      <span id="player-rank-badge" class="rank-badge">🧪 Iniciado de la Forja</span>
+      <span id="player-xp-val" class="xp-badge">0 XP</span>
+    </div>
+
+    <!-- Header Controls -->
+    <div class="header-controls">
+      <div class="control-group">
+        <label for="quest-select">📜 Misión del Gremio:</label>
+        <select id="quest-select"></select>
+      </div>
+
+      <div class="control-group">
+        <label for="molecule-select">🧪 Molécula:</label>
+        <select id="molecule-select"></select>
+      </div>
+
+      <button id="btn-show-qasm" class="btn" title="Exportar circuito a OpenQASM 3.0">
+        📜 OpenQASM 3.0
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+
+    <!-- Active Molecule Banner -->
+    <section class="molecule-banner">
+      <div class="mol-info">
+        <div class="mol-header">
+          <span id="mol-formula" class="mol-formula">H₂</span>
+          <h2 id="mol-title" class="mol-title">Dihidrógeno</h2>
+        </div>
+        <p id="mol-desc" class="mol-desc">Cargando propiedades electrónicas...</p>
+      </div>
+
+      <div class="mol-stats">
+        <div class="stat-pill">
+          <div class="stat-pill-label">Distancia de Enlace (R)</div>
+          <select id="bond-distance-select" style="margin-top: 0.2rem;"></select>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-label">Estado Hartree-Fock</div>
+          <div id="hf-state-badge" class="stat-pill-val">|10⟩</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-label">FCI Exacto Ground State</div>
+          <div id="fci-energy-badge" class="stat-pill-val">-1.1373 Ha</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workspace Grid -->
+    <section class="forge-grid">
+
+      <!-- Left: Variational Ansatz & Gate Sliders -->
+      <article class="forge-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>⚙️ Constructor de Ansatz UCCSD</span>
+          </div>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Rotaciones Paramétricas R_y(θ)</span>
+        </div>
+
+        <div id="gate-sliders-container" class="sliders-container">
+          <!-- Dynamically generated sliders -->
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <button id="btn-optimize-vqe" class="btn quantum" style="flex: 1;">
+            ⚡ Bucle VQE Híbrido (Powell)
+          </button>
+          <button id="btn-forge-crystal" class="btn primary" style="flex: 1;">
+            💎 Cristalizar Compuesto
+          </button>
+        </div>
+
+        <!-- Pauli Expansion of H -->
+        <div style="border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.35rem;">
+            Cadenas de Pauli del Hamiltoniano H = ∑ c_k P_k (Jordan-Wigner):
+          </div>
+          <div id="pauli-terms-list" class="pauli-list">
+            <!-- Badges -->
+          </div>
+        </div>
+      </article>
+
+      <!-- Right: Real-Time Evaluator & Visualizers -->
+      <article class="forge-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>🔮 Espectrómetro de Energía & Nube Orbital</span>
+          </div>
+          <div id="purity-badge" style="font-weight: 700; font-size: 0.85rem;">🌟🌟 Precisión Química</div>
+        </div>
+
+        <!-- Energy Gauges -->
+        <div class="meters-grid">
+          <div class="meter-card">
+            <div class="meter-label">Energía VQE Actual ⟨H⟩</div>
+            <div id="vqe-energy-display" class="meter-val" style="color: var(--cyan-quantum);">-1.1167 Ha</div>
+          </div>
+          <div class="meter-card">
+            <div class="meter-label">Energía FCI Teórica</div>
+            <div id="fci-energy-display" class="meter-val">-1.1373 Ha</div>
+          </div>
+          <div class="meter-card">
+            <div class="meter-label">Delta / Error Absoluto</div>
+            <div id="error-mha-display" class="meter-val" style="color: var(--alchemy-gold);">20.59 mHa</div>
+          </div>
+        </div>
+
+        <div id="precision-alert" class="precision-alert hidden">
+          ✨ ¡PRECISIÓN QUÍMICA ALCANZADA!
+        </div>
+
+        <!-- Born-Oppenheimer Curve Canvas -->
+        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
+            <span>Curva de Potencial de Born-Oppenheimer E(R):</span>
+            <span>Cian = Curva FCI | Dorado = Nivel Activo</span>
+          </div>
+          <div class="canvas-card">
+            <canvas id="canvas-born-oppenheimer" width="550" height="180"></canvas>
+          </div>
+        </div>
+
+        <!-- Orbital Simulation Canvas -->
+        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+          <div style="font-size: 0.75rem; color: var(--text-muted);">
+            Densidad Electrónica de Orbitales HOMO (Enlazante) / LUMO (Antienlazante):
+          </div>
+          <div class="canvas-card" style="height: 100px;">
+            <canvas id="canvas-orbitals" width="550" height="100"></canvas>
+          </div>
+        </div>
+
+      </article>
+
+    </section>
+
+  </main>
+
+  <!-- OpenQASM 3.0 Modal -->
+  <div id="qasm-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Circuito VQE OpenQASM 3.0 (IBM EstimatorV2)</h3>
+        <button id="btn-close-qasm" class="btn" style="padding: 0.2rem 0.6rem;">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Circuito cuántico parametrizado listo para ejecutarse en backends cuánticos de IBM Quantum mediante Qiskit Runtime EstimatorV2 o Google Cirq.
+        </p>
+        <pre><code id="qasm-content"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-copy-qasm" class="btn primary">Copiar al Portapapeles</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Codex — <strong>vqe-alchemist-molecular-forge-rpg</strong> | Capa 4 de Computación Cuántica Híbrida | Bucle Variacional VQE & Precisión Química</p>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
